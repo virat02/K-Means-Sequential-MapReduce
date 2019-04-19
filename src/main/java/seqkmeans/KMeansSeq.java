@@ -3,22 +3,16 @@ package seqkmeans;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.URI;
 import java.util.*;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.Counter;
-import org.apache.hadoop.mapreduce.Counters;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.NLineInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
@@ -28,21 +22,10 @@ import org.apache.log4j.Logger;
 public class KMeansSeq extends Configured implements Tool {
 
     private static final Logger logger = LogManager.getLogger(KMeansSeq.class);
+    private static List<ArrayList<Double>> records = new ArrayList<>();
 
     public static class KMeansSeqMapper extends
             Mapper<Object, Text, Text, Text> {
-
-        private static List<ArrayList<Double>> records = new ArrayList<>();
-        private static ArrayList<ArrayList<Double>> centroids = new ArrayList<>();
-
-        //Threshold for convergence(set to 1%)
-        private static final double THRESHOLD = 0.01;
-
-        //Initialize the termination to false
-        private static boolean runIteration = false;
-
-        //private static HashMap<ArrayList<Double>, Double> centroidMap = new HashMap<>();
-        private static HashMap<ArrayList<Double>, ArrayList<ArrayList<Double>>> clusterMap = new HashMap<>();
 
         //Euclidean distance
         private static Double distance(ArrayList<Double> centroid, ArrayList<Double> record) {
@@ -55,7 +38,7 @@ public class KMeansSeq extends Configured implements Tool {
             return Math.sqrt(sum);
         }
 
-        private static void selectRandomCentroids(int k) {
+        private static void selectRandomCentroids(List<ArrayList<Double>> centroids, int k) {
             // Selecting k centroids at random
             // Reference - https://stackoverflow.com/questions/12487592/randomly-select-an-item-from-a-list
             int i = 0;
@@ -68,7 +51,7 @@ public class KMeansSeq extends Configured implements Tool {
             }
         }
 
-        private static void evaluateClusterMap() {
+        private static void evaluateClusterMap(HashMap<ArrayList<Double>, ArrayList<ArrayList<Double>>> clusterMap, List<ArrayList<Double>> centroids) {
 
             clusterMap.clear();
 
@@ -87,7 +70,8 @@ public class KMeansSeq extends Configured implements Tool {
             return a;
         }
 
-        private static void evaluateCentroids(){
+        private static void evaluateCentroids(HashMap<ArrayList<Double>, ArrayList<ArrayList<Double>>> clusterMap,
+                                              List<ArrayList<Double>> centroids, boolean runIteration, Double THRESHOLD){
 
             //CLear the previous centroids
             centroids.clear();
@@ -119,7 +103,8 @@ public class KMeansSeq extends Configured implements Tool {
             }
         }
 
-        private static void kMeans(){
+        private static void kMeans(HashMap<ArrayList<Double>, ArrayList<ArrayList<Double>>> clusterMap,
+                                   List<ArrayList<Double>> centroids, boolean runIteration, Double THRESHOLD){
             // running k means
 
             //Run the iteration based on the flag set during convergence
@@ -143,10 +128,10 @@ public class KMeansSeq extends Configured implements Tool {
 
                 //To recompute new centroids by averaging the records assigned to each
                 //Sets the flag to false if converged
-                evaluateCentroids();
+                evaluateCentroids(clusterMap, centroids, runIteration, THRESHOLD);
 
                 if(runIteration){
-                    evaluateClusterMap();
+                    evaluateClusterMap(clusterMap, centroids);
                 }
 
 
@@ -186,11 +171,23 @@ public class KMeansSeq extends Configured implements Tool {
         public void map(Object key, Text value, Context context)
                 throws IOException, InterruptedException {
 
-            selectRandomCentroids(Integer.parseInt(key.toString()));
+            List<ArrayList<Double>> centroids = new ArrayList<>();
+
+            //Threshold for convergence(set to 1%)
+            final double THRESHOLD = 0.01;
+
+            //Initialize the termination to false
+            boolean runIteration = false;
+
+            //private static HashMap<ArrayList<Double>, Double> centroidMap = new HashMap<>();
+            HashMap<ArrayList<Double>, ArrayList<ArrayList<Double>>> clusterMap = new HashMap<>();
+
+            context.write(null, new Text("K: "+value));
+            selectRandomCentroids(centroids, Integer.parseInt(value.toString()));
             context.write(null, new Text("Random centroids"));
             context.write(null,new Text(centroids.toString()));
-            evaluateClusterMap();
-            kMeans();
+            evaluateClusterMap(clusterMap, centroids);
+            kMeans(clusterMap, centroids, runIteration, THRESHOLD);
 
             for (ArrayList<Double> k: clusterMap.keySet()) {
                 context.write(null, new Text("----------------------"));
@@ -199,7 +196,6 @@ public class KMeansSeq extends Configured implements Tool {
                 for (ArrayList<Double> r: clusterMap.get(k)) {
                     context.write(null, new Text("\n"));
                     context.write(null, new Text((r.get((r.size() - 1))).toString()));
-                    context.write(null, new Text("\n"));
                 }
             }
         }
