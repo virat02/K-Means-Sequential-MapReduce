@@ -22,10 +22,11 @@ import org.apache.log4j.Logger;
 public class KMeansSeq extends Configured implements Tool {
 
     private static final Logger logger = LogManager.getLogger(KMeansSeq.class);
-    private static List<ArrayList<Double>> records = new ArrayList<>();
 
     public static class KMeansSeqMapper extends
             Mapper<Object, Text, Text, Text> {
+
+        private static List<ArrayList<Double>> records = new ArrayList<>();
 
         //Euclidean distance
         private static Double distance(ArrayList<Double> centroid, ArrayList<Double> record) {
@@ -70,10 +71,10 @@ public class KMeansSeq extends Configured implements Tool {
             return a;
         }
 
-        private static void evaluateCentroids(HashMap<ArrayList<Double>, ArrayList<ArrayList<Double>>> clusterMap,
+        private static boolean evaluateCentroids(HashMap<ArrayList<Double>, ArrayList<ArrayList<Double>>> clusterMap,
                                               List<ArrayList<Double>> centroids, boolean runIteration, Double THRESHOLD){
 
-            //CLear the previous centroids
+            //Clear the previous centroids
             centroids.clear();
 
             for (ArrayList<Double> c: clusterMap.keySet()) {
@@ -99,8 +100,11 @@ public class KMeansSeq extends Configured implements Tool {
                 if(distance(c,new_c) / distance(initializeList(c.size()), c) > THRESHOLD) {
                     runIteration = true;
                 }
+
                 centroids.add(new_c);
             }
+
+            return runIteration;
         }
 
         private static void kMeans(HashMap<ArrayList<Double>, ArrayList<ArrayList<Double>>> clusterMap,
@@ -128,7 +132,7 @@ public class KMeansSeq extends Configured implements Tool {
 
                 //To recompute new centroids by averaging the records assigned to each
                 //Sets the flag to false if converged
-                evaluateCentroids(clusterMap, centroids, runIteration, THRESHOLD);
+                runIteration = evaluateCentroids(clusterMap, centroids, runIteration, THRESHOLD);
 
                 if(runIteration){
                     evaluateClusterMap(clusterMap, centroids);
