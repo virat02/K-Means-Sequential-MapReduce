@@ -70,10 +70,7 @@ public class KMeansSeq extends Configured implements Tool {
 
         private static void evaluateClusterMap() {
 
-            //Clear the previous contents of the clusterMap if we have a next iteration
-            if(runIteration) {
-                clusterMap.clear();
-            }
+            clusterMap.clear();
 
             // creating k entries in hashmap, one for each centroid
             for (ArrayList<Double> c: centroids) {
@@ -148,7 +145,10 @@ public class KMeansSeq extends Configured implements Tool {
                 //Sets the flag to false if converged
                 evaluateCentroids();
 
-                evaluateClusterMap();
+                if(runIteration){
+                    evaluateClusterMap();
+                }
+
 
             } while(runIteration);
         }
@@ -187,19 +187,19 @@ public class KMeansSeq extends Configured implements Tool {
                 throws IOException, InterruptedException {
 
             selectRandomCentroids(Integer.parseInt(key.toString()));
-            System.out.println("Random centroids");
-            System.out.println(centroids);
+            context.write(null, new Text("Random centroids"));
+            context.write(null,new Text(centroids.toString()));
             evaluateClusterMap();
             kMeans();
 
             for (ArrayList<Double> k: clusterMap.keySet()) {
-                System.out.println();
-                System.out.println(k);
-                System.out.println();
+                context.write(null, new Text("----------------------"));
+                context.write(null, new Text(k.toString()));
+                context.write(null, new Text("-----------------------"));
                 for (ArrayList<Double> r: clusterMap.get(k)) {
-                    System.out.println("---------------------------");
-                    System.out.println(r.get(r.size()- 1));
-                    System.out.println("---------------------------");
+                    context.write(null, new Text("\n"));
+                    context.write(null, new Text((r.get((r.size() - 1))).toString()));
+                    context.write(null, new Text("\n"));
                 }
             }
         }

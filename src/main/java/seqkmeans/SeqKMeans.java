@@ -76,10 +76,7 @@ public class SeqKMeans {
 
     private static void evaluateClusterMap() {
 
-        //Clear the previous contents of the clusterMap if we have a next iteration
-        if(runIteration) {
-            clusterMap.clear();
-        }
+        clusterMap.clear();
 
         // creating k entries in hashmap, one for each centroid
         for (ArrayList<Double> c: centroids) {
@@ -154,7 +151,11 @@ public class SeqKMeans {
             //Sets the flag to false if converged
             evaluateCentroids();
 
-            evaluateClusterMap();
+            //Clear the previous contents of the clusterMap if we have a next iteration
+            if(runIteration) {
+                evaluateClusterMap();
+            }
+
 
         } while(runIteration);
     }
