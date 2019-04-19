@@ -143,6 +143,8 @@ public class KMeansSeq extends Configured implements Tool {
                 throws IOException, InterruptedException {
             super.setup(context);
 
+            records.clear();
+
             //Retrieve from local cache
             URI[] cacheFiles = context.getCacheFiles();
 
