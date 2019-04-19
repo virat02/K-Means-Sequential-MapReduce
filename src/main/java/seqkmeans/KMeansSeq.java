@@ -182,21 +182,21 @@ public class KMeansSeq extends Configured implements Tool {
             //private static HashMap<ArrayList<Double>, Double> centroidMap = new HashMap<>();
             HashMap<ArrayList<Double>, ArrayList<ArrayList<Double>>> clusterMap = new HashMap<>();
 
-            context.write(null, new Text("K: "+value));
             selectRandomCentroids(centroids, Integer.parseInt(value.toString()));
-            context.write(null, new Text("Random centroids"));
-            context.write(null,new Text(centroids.toString()));
             evaluateClusterMap(clusterMap, centroids);
             kMeans(clusterMap, centroids, runIteration, THRESHOLD);
 
+            int i = 0;
             for (ArrayList<Double> k: clusterMap.keySet()) {
-                context.write(null, new Text("----------------------"));
-                context.write(null, new Text(k.toString()));
-                context.write(null, new Text("-----------------------"));
                 for (ArrayList<Double> r: clusterMap.get(k)) {
-                    context.write(null, new Text("\n"));
-                    context.write(null, new Text((r.get((r.size() - 1))).toString()));
+                    StringBuilder out_record = new StringBuilder();
+                    for (int j = 0; j < r.size()- 1; j++){
+                         out_record.append(r.get(j) + ";");
+                    }
+                    out_record.append(r.get(r.size() - 1));
+                    context.write(null, new Text(Integer.toString(i) + ":" + out_record.toString()));
                 }
+                i++;
             }
         }
     }
