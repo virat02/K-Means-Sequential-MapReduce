@@ -7,8 +7,8 @@ jar.name=mr-demo-1.0.jar
 jar.path=target/${jar.name}
 job.name=seqkmeans.KMeansSeq
 local.input=input
-local.output=output
-local.log=log
+local.output=output_5M_small_data
+local.log=log_5M_small_data
 local.k_input=k_input
 # Pseudo-Cluster Execution
 hdfs.user.name=joe
@@ -17,10 +17,11 @@ hdfs.output=output
 # AWS EMR Execution
 aws.emr.release=emr-5.20.0
 aws.region=us-east-1
-aws.bucket.name=jm-mr-project
+aws.bucket.name=jm-mr-project-seq-small-data
 aws.subnet.id=subnet-6356553a
 aws.input=input
 aws.output=output
+aws.k_input=k_input
 aws.log.dir=log
 aws.num.nodes=5
 aws.instance.type=m4.large
@@ -112,11 +113,11 @@ upload-app-aws:
 # Main EMR launch.
 aws: jar upload-app-aws delete-output-aws
 	aws emr create-cluster \
-		--name "K Means Hadoop_5_machines_3.8gb_input" \
+		--name "K Means Seq Hadoop_5_machines_small_input" \
 		--release-label ${aws.emr.release} \
 		--instance-groups '[{"InstanceCount":${aws.num.nodes},"InstanceGroupType":"CORE","InstanceType":"${aws.instance.type}"},{"InstanceCount":1,"InstanceGroupType":"MASTER","InstanceType":"${aws.instance.type}"}]' \
 	    --applications Name=Hadoop \
-	    --steps '[{"Args":["${job.name}","s3://${aws.bucket.name}/${aws.input}","s3://${aws.bucket.name}/${aws.output}","${K}"],"Type":"CUSTOM_JAR","Jar":"s3://${aws.bucket.name}/${jar.name}","ActionOnFailure":"TERMINATE_CLUSTER","Name":"Custom JAR"}]' \
+	    --steps '[{"Args":["${job.name}","s3://${aws.bucket.name}/${aws.input}","s3://${aws.bucket.name}/${aws.output}","s3://${aws.bucket.name}/${aws.k_input}"],"Type":"CUSTOM_JAR","Jar":"s3://${aws.bucket.name}/${jar.name}","ActionOnFailure":"TERMINATE_CLUSTER","Name":"Custom JAR"}]' \
 		--log-uri s3://${aws.bucket.name}/${aws.log.dir} \
 		--use-default-roles \
 		--enable-debugging \

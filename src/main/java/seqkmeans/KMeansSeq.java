@@ -219,8 +219,7 @@ public class KMeansSeq extends Configured implements Tool {
         jobConf.set("mapreduce.output.textoutputformat.separator", "\n");
 
         //Add the input to cache file
-        job.addCacheFile((new Path("input/normalized_data.csv")).toUri());
-
+        job.addCacheFile(new URI(args[0]+"/normalized_data.csv"));
         //set the sequential flow of job
         job.setMapperClass(KMeansSeqMapper.class);
         job.setNumReduceTasks(0);
