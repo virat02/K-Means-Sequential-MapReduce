@@ -36,7 +36,7 @@ public class SeqKMeans {
 //    }
 
      //Euclidian distance
-     private Double distance(ArrayList<Double> centroid, ArrayList<Double> record) {
+     private static Double distance(ArrayList<Double> centroid, ArrayList<Double> record) {
          double sum = 0.0;
          int size = centroid.size();
          // ignoring the last elememt ... which is the actual label for now

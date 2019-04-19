@@ -2,11 +2,10 @@
 
 # Customize these paths for your environment.
 # -----------------------------------------------------------
-K=2
 hadoop.root=${HADOOP_HOME}
 jar.name=mr-demo-1.0.jar
 jar.path=target/${jar.name}
-job.name=kmeans.KMeans
+job.name=seqkmeans.KMeansSeq
 local.input=input
 local.output=output
 local.log=log
@@ -22,7 +21,7 @@ aws.subnet.id=subnet-6356553a
 aws.input=input
 aws.output=output
 aws.log.dir=log
-aws.num.nodes=2
+aws.num.nodes=5
 aws.instance.type=m4.large
 # -----------------------------------------------------------
 
@@ -38,7 +37,7 @@ clean-local-output:
 # Make sure Hadoop  is set up (in /etc/hadoop files) for standalone operation (not pseudo-cluster).
 # https://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-common/SingleCluster.html#Standalone_Operation
 local: jar clean-local-output
-	${hadoop.root}/bin/hadoop jar ${jar.path} ${job.name} ${local.input} ${local.output} ${K}
+	${hadoop.root}/bin/hadoop jar ${jar.path} ${job.name} ${local.input} ${local.output}
 
 # Start HDFS
 start-hdfs:
@@ -112,7 +111,7 @@ upload-app-aws:
 # Main EMR launch.
 aws: jar upload-app-aws delete-output-aws
 	aws emr create-cluster \
-		--name "K Means Hadoop" \
+		--name "K Means Hadoop_5_machines_3.8gb_input" \
 		--release-label ${aws.emr.release} \
 		--instance-groups '[{"InstanceCount":${aws.num.nodes},"InstanceGroupType":"CORE","InstanceType":"${aws.instance.type}"},{"InstanceCount":1,"InstanceGroupType":"MASTER","InstanceType":"${aws.instance.type}"}]' \
 	    --applications Name=Hadoop \
