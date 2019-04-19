@@ -5,10 +5,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.StringTokenizer;
+import java.util.*;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
@@ -20,6 +17,7 @@ import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.Counters;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.lib.input.NLineInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
@@ -34,7 +32,126 @@ public class KMeansSeq extends Configured implements Tool {
     public static class KMeansSeqMapper extends
             Mapper<Object, Text, Text, Text> {
 
-        private List<ArrayList<Double>> records = new ArrayList<>();
+        private static List<ArrayList<Double>> records = new ArrayList<>();
+        private static ArrayList<ArrayList<Double>> centroids = new ArrayList<>();
+
+        //Threshold for convergence(set to 1%)
+        private static final double THRESHOLD = 0.01;
+
+        //Initialize the termination to false
+        private static boolean runIteration = false;
+
+        //private static HashMap<ArrayList<Double>, Double> centroidMap = new HashMap<>();
+        private static HashMap<ArrayList<Double>, ArrayList<ArrayList<Double>>> clusterMap = new HashMap<>();
+
+        //Euclidean distance
+        private static Double distance(ArrayList<Double> centroid, ArrayList<Double> record) {
+            double sum = 0.0;
+            int size = centroid.size();
+            // ignoring the last elememt ... which is the actual label for now
+            for (int i = 0; i < size - 1; i++) {
+                sum += Math.pow(centroid.get(i) - record.get(i), 2);
+            }
+            return Math.sqrt(sum);
+        }
+
+        private static void selectRandomCentroids(int k) {
+            // Selecting k centroids at random
+            // Reference - https://stackoverflow.com/questions/12487592/randomly-select-an-item-from-a-list
+            int i = 0;
+            while (i < k){
+                Random random = new Random();
+                ArrayList<Double> centroid = records.get(random.nextInt(records.size()));
+                centroids.add(centroid);
+                i++;
+
+            }
+        }
+
+        private static void evaluateClusterMap() {
+
+            //Clear the previous contents of the clusterMap if we have a next iteration
+            if(runIteration) {
+                clusterMap.clear();
+            }
+
+            // creating k entries in hashmap, one for each centroid
+            for (ArrayList<Double> c: centroids) {
+                clusterMap.put(c, new ArrayList<>());
+            }
+        }
+
+        private static ArrayList<Double> initializeList(int size) {
+            ArrayList<Double> a = new ArrayList<>();
+            for(int j = 0; j < size; j++){
+                a.add(0.0);
+            }
+
+            return a;
+        }
+
+        private static void evaluateCentroids(){
+
+            //CLear the previous centroids
+            centroids.clear();
+
+            for (ArrayList<Double> c: clusterMap.keySet()) {
+
+                //create initial centroid
+                ArrayList<Double> new_c = initializeList(clusterMap.get(c).get(0).size());
+
+                for (ArrayList<Double> r: clusterMap.get(c)) {
+                    //start from first column
+                    int i = 0;
+
+                    //loop until last column, each column denotes one feature
+                    //ignore the last column which is the feature: label
+                    while (i < r.size() - 1){
+
+                        //calculate the average of the column under consideration
+                        new_c.set(i, new_c.get(i) + (r.get(i)/clusterMap.get(c).size()));
+                        i++;
+                    }
+                }
+
+                //check for convergence
+                if(distance(c,new_c) / distance(initializeList(c.size()), c) > THRESHOLD) {
+                    runIteration = true;
+                }
+                centroids.add(new_c);
+            }
+        }
+
+        private static void kMeans(){
+            // running k means
+
+            //Run the iteration based on the flag set during convergence
+            do {
+                runIteration = false;
+                for (ArrayList<Double> r : records) {
+
+                    Double min_val = Double.MAX_VALUE;
+                    ArrayList<Double> selected_c = null;
+                    Double d;
+
+                    for (ArrayList<Double> c : centroids) {
+                        d = distance(c, r);
+                        if (d < min_val) {
+                            selected_c = c;
+                            min_val = d;
+                        }
+                    }
+                    clusterMap.get(selected_c).add(r);
+                }
+
+                //To recompute new centroids by averaging the records assigned to each
+                //Sets the flag to false if converged
+                evaluateCentroids();
+
+                evaluateClusterMap();
+
+            } while(runIteration);
+        }
 
         @Override
         protected void setup(Mapper<Object, Text, Text, Text>.Context context)
@@ -69,7 +186,22 @@ public class KMeansSeq extends Configured implements Tool {
         public void map(Object key, Text value, Context context)
                 throws IOException, InterruptedException {
 
-            System.out.println(records);
+            selectRandomCentroids(Integer.parseInt(key.toString()));
+            System.out.println("Random centroids");
+            System.out.println(centroids);
+            evaluateClusterMap();
+            kMeans();
+
+            for (ArrayList<Double> k: clusterMap.keySet()) {
+                System.out.println();
+                System.out.println(k);
+                System.out.println();
+                for (ArrayList<Double> r: clusterMap.get(k)) {
+                    System.out.println("---------------------------");
+                    System.out.println(r.get(r.size()- 1));
+                    System.out.println("---------------------------");
+                }
+            }
         }
     }
 
@@ -92,7 +224,9 @@ public class KMeansSeq extends Configured implements Tool {
         job.setNumReduceTasks(0);
 
         //Set the input path for job
-        TextInputFormat.setInputPaths(job, new Path(args[0]));
+        job.setInputFormatClass(NLineInputFormat.class);
+        NLineInputFormat.addInputPath(job, new Path(args[2]));
+        job.getConfiguration().setInt("mapreduce.input.lineinputformat.linespermap", 1);
 
         //Set the output path for job
         TextOutputFormat.setOutputPath(job, new Path(args[1]));
@@ -109,7 +243,7 @@ public class KMeansSeq extends Configured implements Tool {
 
     public static void main(String[] args) throws Exception {
 
-        if (args.length != 2) {
+        if (args.length != 3) {
         }
 
         try {

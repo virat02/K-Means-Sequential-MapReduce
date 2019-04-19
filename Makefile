@@ -9,6 +9,7 @@ job.name=seqkmeans.KMeansSeq
 local.input=input
 local.output=output
 local.log=log
+local.k_input=k_input
 # Pseudo-Cluster Execution
 hdfs.user.name=joe
 hdfs.input=input
@@ -37,7 +38,7 @@ clean-local-output:
 # Make sure Hadoop  is set up (in /etc/hadoop files) for standalone operation (not pseudo-cluster).
 # https://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-common/SingleCluster.html#Standalone_Operation
 local: jar clean-local-output
-	${hadoop.root}/bin/hadoop jar ${jar.path} ${job.name} ${local.input} ${local.output}
+	${hadoop.root}/bin/hadoop jar ${jar.path} ${job.name} ${local.input} ${local.output} ${local.k_input}
 
 # Start HDFS
 start-hdfs:

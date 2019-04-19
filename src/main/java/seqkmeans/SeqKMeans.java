@@ -61,7 +61,7 @@ public class SeqKMeans {
         br.close();
     }
 
-    private static void selectRandomCentroids() {
+    private static void selectRandomCentroids(int k) {
         // Selecting k centroids at random
         // Reference - https://stackoverflow.com/questions/12487592/randomly-select-an-item-from-a-list
         int i = 0;
@@ -162,7 +162,7 @@ public class SeqKMeans {
     public static void main(String[] args) throws IOException {
 
         readFile();
-        selectRandomCentroids();
+        selectRandomCentroids(k);
         System.out.println("Random centroids");
         System.out.println(centroids);
         evaluateClusterMap();
