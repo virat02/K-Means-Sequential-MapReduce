@@ -7,8 +7,8 @@ jar.name=mr-demo-1.0.jar
 jar.path=target/${jar.name}
 job.name=seqkmeans.KMeansSeq
 local.input=input
-local.output=output_5M_small_data
-local.log=log_5M_small_data
+local.output=output
+local.log=log
 local.k_input=k_input
 # Pseudo-Cluster Execution
 hdfs.user.name=joe
@@ -17,7 +17,7 @@ hdfs.output=output
 # AWS EMR Execution
 aws.emr.release=emr-5.20.0
 aws.region=us-east-1
-aws.bucket.name=jm-mr-project-seq-small-data
+aws.bucket.name=jm-mr-project-seq-large
 aws.subnet.id=subnet-6356553a
 aws.input=input
 aws.output=output
@@ -113,7 +113,7 @@ upload-app-aws:
 # Main EMR launch.
 aws: jar upload-app-aws delete-output-aws
 	aws emr create-cluster \
-		--name "K Means Seq Hadoop_5_machines_small_input" \
+		--name "K Means Seq 5M 1GB" \
 		--release-label ${aws.emr.release} \
 		--instance-groups '[{"InstanceCount":${aws.num.nodes},"InstanceGroupType":"CORE","InstanceType":"${aws.instance.type}"},{"InstanceCount":1,"InstanceGroupType":"MASTER","InstanceType":"${aws.instance.type}"}]' \
 	    --applications Name=Hadoop \

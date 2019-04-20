@@ -24,7 +24,7 @@ with open("data/winequality-red.csv") as f:
                 if i not in min_max:
                     data.append(str(int(j)))
                 else:
-                    data.append(str(100*(j - min_max[i]["min"])/min_max[i]["diff"]))
+                    data.append(str((j - min_max[i]["min"])/min_max[i]["diff"]))
             w.write(";".join(data)+"\n")
 
             

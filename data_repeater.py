@@ -1,12 +1,12 @@
 import sys
 
-file = open(sys.argv[1], "r")
+file = open("input/normalized_data.csv", "r")
 l = []
 
 text = file.read()
 file.close()
 i = 0
-while (i<15000):
+while (i<4000):
     l.append(text)
     i += 1
 
