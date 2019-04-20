@@ -141,10 +141,10 @@ public class KMeansSeq extends Configured implements Tool {
 
                 String line;
                 while ((line = br.readLine()) != null) {
-                    String[] keyvalue = line.split(";");
+                    String[] values = line.split(";");
 
                     ArrayList<Double> record = new ArrayList<>();
-                    for (String s : keyvalue) {
+                    for (String s : values) {
                         record.add(Double.parseDouble(s));
                     }
                     records.add(record);

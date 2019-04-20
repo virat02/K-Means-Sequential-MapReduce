@@ -7,8 +7,8 @@ jar.name=mr-demo-1.0.jar
 jar.path=target/${jar.name}
 job.name=seqkmeans.KMeansSeq
 local.input=input
-local.output=output
-local.log=log
+local.output=output_5M_250MB
+local.log=log_5M_250MB
 local.k_input=k_input
 # Pseudo-Cluster Execution
 hdfs.user.name=joe
@@ -17,7 +17,7 @@ hdfs.output=output
 # AWS EMR Execution
 aws.emr.release=emr-5.20.0
 aws.region=us-east-1
-aws.bucket.name=jm-mr-project-seq-large
+aws.bucket.name=jm-mr-project-seq-medium
 aws.subnet.id=subnet-6356553a
 aws.input=input
 aws.output=output
